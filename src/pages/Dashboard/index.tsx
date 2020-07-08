@@ -27,17 +27,40 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // TODO LOAD FOODS
+      const response = await api.get('/foods');
+
+      setFoods(response.data);
     }
 
     loadFoods();
   }, []);
 
-  async function handleAddFood(
-    food: Omit<IFoodPlate, 'id' | 'available'>,
-  ): Promise<void> {
+  async function handleAddFood({
+    name,
+    image,
+    price,
+    description,
+  }: Omit<IFoodPlate, 'id' | 'available'>): Promise<void> {
     try {
-      // TODO ADD A NEW FOOD PLATE TO THE API
+      const foodIds = foods.reduce((accumulator: number[], foodId) => {
+        accumulator.push(foodId.id);
+
+        return accumulator;
+      }, []);
+
+      const newFood = {
+        id: Math.max(...foodIds) + 1,
+        name,
+        description,
+        price,
+        available: true,
+        image,
+      };
+
+      await api.post('/foods', newFood);
+
+      setFoods([...foods, newFood]);
+      setModalOpen(false);
     } catch (err) {
       console.log(err);
     }
