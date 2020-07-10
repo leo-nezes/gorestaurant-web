@@ -42,14 +42,7 @@ const Dashboard: React.FC = () => {
     description,
   }: Omit<IFoodPlate, 'id' | 'available'>): Promise<void> {
     try {
-      const foodIds = foods.reduce((accumulator: number[], foodId) => {
-        accumulator.push(foodId.id);
-
-        return accumulator;
-      }, []);
-
       const newFood = {
-        id: Math.max(...foodIds) + 1,
         name,
         description,
         price,
@@ -57,30 +50,53 @@ const Dashboard: React.FC = () => {
         image,
       };
 
-      await api.post('/foods', newFood);
+      const response = await api.post('/foods', newFood);
 
-      setFoods([...foods, newFood]);
+      setFoods([...foods, response.data]);
       setModalOpen(false);
     } catch (err) {
       console.log(err);
     }
   }
 
+  async function handleUpdateFoodAvailability(food: IFoodPlate): Promise<void> {
+    const { id, name, description, price, image, available } = food;
+
+    const updateFood = {
+      id,
+      name,
+      description,
+      price,
+      available: !available,
+      image,
+    };
+
+    await api.put(`/foods/${id}`, updateFood);
+
+    const newArrayWithUpdatedFood = foods.map(foodMap => {
+      if (foodMap.id === id) return updateFood;
+
+      return foodMap;
+    });
+
+    setFoods(newArrayWithUpdatedFood);
+  }
   async function handleUpdateFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
     const { name, description, price, image } = food;
+    const { id, available } = editingFood;
 
     const updateFood = {
-      id: editingFood.id,
+      id,
       name,
       description,
       price,
-      available: editingFood.available,
+      available,
       image,
     };
 
-    await api.patch(`/foods/${editingFood.id}`, updateFood);
+    await api.put(`/foods/${id}`, updateFood);
 
     const newArrayWithUpdatedFood = foods.map(foodMap => {
       if (foodMap.id === updateFood.id) return updateFood;
@@ -135,6 +151,7 @@ const Dashboard: React.FC = () => {
               food={food}
               handleDelete={handleDeleteFood}
               handleEditFood={handleEditFood}
+              handleUpdateFoodAvailability={handleUpdateFoodAvailability}
             />
           ))}
       </FoodsContainer>
